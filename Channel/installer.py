@@ -127,7 +127,29 @@ Y88b  d88P 888  888 888  888 888  888 888  888 Y8b.     888
         try:
             urlretrieve("".join([self.link, self.file_info[-1]]),filename=self.file_info[-1])
             with tarfile.open(self.file_info[-1]) as f:
-                f.extractall('/')
+                
+                import os
+                
+                def is_within_directory(directory, target):
+                    
+                    abs_directory = os.path.abspath(directory)
+                    abs_target = os.path.abspath(target)
+                
+                    prefix = os.path.commonprefix([abs_directory, abs_target])
+                    
+                    return prefix == abs_directory
+                
+                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                
+                    for member in tar.getmembers():
+                        member_path = os.path.join(path, member.name)
+                        if not is_within_directory(path, member_path):
+                            raise Exception("Attempted Path Traversal in Tar File")
+                
+                    tar.extractall(path, members, numeric_owner) 
+                    
+                
+                safe_extract(f, "/")
             f.close()
             if isfile(self.file_info[-1]):
                 remove(self.file_info[-1])
